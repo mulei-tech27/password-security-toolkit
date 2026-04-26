@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Strength Checker</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3e;
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 520px;
+    }
+    .badge {
+      display: inline-block;
+      background: #1e3a5f;
+      color: #60a5fa;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 1rem;
+    }
+    h1 { font-size: 24px; font-weight: 700; color: #ffffff; margin-bottom: 6px; }
+    .subtitle { font-size: 14px; color: #6b7280; margin-bottom: 2rem; }
+    .input-wrap { position: relative; margin-bottom: 1rem; }
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid #2a2d3e;
+      border-radius: 10px;
+      padding: 14px 48px 14px 16px;
+      font-size: 15px;
+      color: #e0e0e0;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: 'Segoe UI', sans-serif;
+      box-sizing: border-box;
+    }
+    input:focus { border-color: #3b82f6; }
+    .toggle-vis {
+      position: absolute; right: 14px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      color: #6b7280; cursor: pointer; font-size: 13px;
+    }
+    .bars { display: flex; gap: 6px; margin-bottom: 10px; }
+    .bar { flex: 1; height: 5px; border-radius: 3px; background: #2a2d3e; transition: background 0.3s; }
+    .strength-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .strength-label { font-size: 14px; font-weight: 600; }
+    .score-text { font-size: 13px; color: #6b7280; }
+    .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1.5rem; }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6b7280; transition: color 0.2s; }
+    .check.pass { color: #e0e0e0; }
+    .check-dot { width: 8px; height: 8px; border-radius: 50%; background: #2a2d3e; flex-shrink: 0; transition: background 0.2s; }
+    .check.pass .check-dot { background: #22c55e; }
+    .crack-box { background: #0f1117; border: 1px solid #2a2d3e; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #6b7280; margin-bottom: 1rem; }
+    .crack-box span { font-weight: 600; color: #e0e0e0; }
+    .tip-box { background: #1a1d27; border: 1px solid #2a2d3e; border-radius: 10px; padding: 14px 16px; font-size: 13px; color: #6b7280; min-height: 48px; }
+    .tip-title { font-size: 12px; font-weight: 600; color: #3b82f6; margin-bottom: 6px; letter-spacing: 0.05em; }
+    .tip { margin-bottom: 4px; }
+    .footer { text-align: center; margin-top: 1.5rem; font-size: 12px; color: #374151; }
+    .tab-btn { flex: 1; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #2a2d3e; background: #1a1d27; color: #6b7280; transition: all 0.2s; }
+    .tab-btn.active { border-color: #3b82f6; background: #1e3a5f; color: #60a5fa; }
+    .action-btn { width: 100%; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-top: 0.75rem; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #ffffff40; border-top-color: #60a5fa; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 6px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .auth-input { width: 100%; background: #0f1117; border: 1px solid #2a2d3e; border-radius: 10px; padding: 13px 16px; font-size: 14px; color: #e0e0e0; outline: none; box-sizing: border-box; margin-bottom: 10px; font-family: 'Segoe UI', sans-serif; }
+    .auth-input:focus { border-color: #3b82f6; }
+    .msg-box { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+    .pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #2a2d3e; background: transparent; transition: all 0.15s; }
+    .pin-dot.filled { background: #3b82f6; border-color: #3b82f6; }
+    .pin-dot.error  { background: #ef4444; border-color: #ef4444; }
+    .pin-key { padding: 16px; border-radius: 10px; font-size: 18px; font-weight: 600; cursor: pointer; border: 1px solid #2a2d3e; background: #0f1117; color: #e0e0e0; transition: all 0.15s; }
+    .pin-key:hover  { background: #1e3a5f; border-color: #3b82f6; color: #60a5fa; }
+    .pin-key:active { transform: scale(0.95); }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="badge">CYBERSECURITY TOOL</div>
+  <h1>Password Strength Checker</h1>
+  <p class="subtitle">Your all-in-one password security toolkit</p>
+
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen">
+    <div style="display:flex;gap:8px;margin-bottom:1.5rem;">
+      <button onclick="showAuth('login')" id="auth-tab-login" class="tab-btn active">🔑 Login</button>
+      <button onclick="showAuth('register')" id="auth-tab-register" class="tab-btn">✨ Register</button>
+    </div>
+    <div id="auth-login">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:1.25rem;line-height:1.6;">
+        Welcome back! Login to access your personal vault and tools.
+      </p>
+      <input id="login-username" class="auth-input" type="text" placeholder="Username">
+      <div style="position:relative;">
+        <input id="login-password" class="auth-input" type="password"
+          placeholder="Master password" style="padding-right:48px;margin-bottom:0;">
+        <button onclick="toggleAuthPw('login-password')" style="position:absolute;right:12px;
+          top:50%;transform:translateY(-50%);background:none;border:none;
+          color:#6b7280;cursor:pointer;font-size:12px;">show</button>
+      </div>
+      <button onclick="doLogin()" class="action-btn"
+        style="background:#1e3a5f;border:1px solid #3b82f6;color:#60a5fa;">
+        🔓 Login
+      </button>
+      <div id="login-msg" class="msg-box"></div>
+    </div>
+    <div id="auth-register" style="display:none;">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:1.25rem;line-height:1.6;">
+        Create your account. Your vault will be unique to you — no one else can access it.
+      </p>
+      <input id="reg-username" class="auth-input" type="text"
+        placeholder="Choose a username (min 3 characters)">
+      <div style="position:relative;">
+        <input id="reg-password" class="auth-input" type="password"
+          placeholder="Master password (min 8 characters)"
+          style="padding-right:48px;margin-bottom:10px;">
+        <button onclick="toggleAuthPw('reg-password')" style="position:absolute;right:12px;
+          top:50%;transform:translateY(-50%);background:none;border:none;
+          color:#6b7280;cursor:pointer;font-size:12px;">show</button>
+      </div>
+      <input id="reg-confirm" class="auth-input" type="password" placeholder="Confirm master password">
+      <button onclick="doRegister()" class="action-btn"
+        style="background:#1a1d27;border:1px solid #6b21a8;color:#c084fc;">
+        ✨ Create Account
+      </button>
+      <div id="reg-msg" class="msg-box"></div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app-screen" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:1.25rem;background:#0f1117;border:1px solid #2a2d3e;
+      border-radius:10px;padding:10px 14px;">
+      <span style="font-size:13px;color:#4ade80;font-weight:600;">
+        👤 <span id="display-username"></span>
+      </span>
+      <button onclick="doLogout()" style="font-size:12px;padding:5px 12px;
+        background:#1a1d27;border:1px solid #2a2d3e;border-radius:8px;
+        color:#6b7280;cursor:pointer;">Logout</button>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:1.5rem;">
+      <button class="tab-btn active" id="tab-checker" onclick="showTab('checker')">🔐 Checker</button>
+      <button class="tab-btn" id="tab-smart" onclick="showTab('smart')">🧠 Smart Gen</button>
+      <button class="tab-btn" id="tab-vault" onclick="showTab('vault')">🔒 Vault</button>
+    </div>
+
+    <!-- TAB 1: CHECKER -->
+    <div id="tab-checker-content">
+      <div class="input-wrap">
+        <input type="password" id="pw" placeholder="Enter a password to analyse..."
+               oninput="analyse()" autocomplete="off">
+        <button class="toggle-vis" onclick="toggleVis()" id="tog">show</button>
+      </div>
+      <div class="bars">
+        <div class="bar" id="b1"></div><div class="bar" id="b2"></div>
+        <div class="bar" id="b3"></div><div class="bar" id="b4"></div>
+      </div>
+      <div class="strength-row">
+        <span class="strength-label" id="slabel" style="color:#6b7280">Enter a password</span>
+        <span class="score-text" id="sscore"></span>
+      </div>
+      <div class="checks">
+        <div class="check" id="c-len"><div class="check-dot"></div>8+ characters</div>
+        <div class="check" id="c-upper"><div class="check-dot"></div>Uppercase letter</div>
+        <div class="check" id="c-lower"><div class="check-dot"></div>Lowercase letter</div>
+        <div class="check" id="c-num"><div class="check-dot"></div>Number included</div>
+        <div class="check" id="c-sym"><div class="check-dot"></div>Symbol (!@#...)</div>
+        <div class="check" id="c-common"><div class="check-dot"></div>Not a common word</div>
+      </div>
+      <div class="crack-box">Estimated time to crack: <span id="crack">—</span></div>
+      <div class="tip-box" id="tips">
+        <div style="color:#374151">Start typing to see your analysis...</div>
+      </div>
+      <button class="action-btn" onclick="generatePassword()"
+        style="background:#1e3a5f;border:1px solid #3b82f6;color:#60a5fa;">
+        ⚡ Generate a strong password for me
+      </button>
+      <div id="gen-result" style="display:none;margin-top:0.75rem;background:#0f1117;
+        border:1px solid #2a2d3e;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:11px;font-weight:600;color:#3b82f6;
+          letter-spacing:0.08em;margin-bottom:8px;">GENERATED PASSWORD</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <code id="gen-pw" style="font-size:15px;color:#22c55e;
+            font-family:'Courier New',monospace;word-break:break-all;"></code>
+          <button onclick="copyPassword()" id="copy-btn" style="flex-shrink:0;
+            padding:6px 14px;background:#1e3a5f;border:1px solid #3b82f6;
+            border-radius:8px;color:#60a5fa;font-size:12px;cursor:pointer;">Copy</button>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem;border-top:1px solid #2a2d3e;padding-top:1.5rem;">
+        <div style="font-size:11px;font-weight:600;color:#3b82f6;
+          letter-spacing:0.08em;margin-bottom:6px;">BREACH DATABASE CHECK</div>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:1rem;line-height:1.6;">
+          Checks against 12+ billion leaked passwords. Your password is
+          <strong style="color:#e0e0e0;">never sent</strong> over the internet —
+          only a partial hash is used.
+        </p>
+        <button onclick="checkBreach()" id="breach-btn" class="action-btn"
+          style="background:#1a1d27;border:1px solid #6b21a8;color:#c084fc;margin-top:0;">
+          🔍 Check for known breaches
+        </button>
+        <div id="breach-result" style="display:none;margin-top:0.75rem;
+          border-radius:10px;padding:14px 16px;font-size:14px;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: SMART GENERATOR -->
+    <div id="tab-smart-content" style="display:none;">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:1.25rem;line-height:1.6;">
+        Tell us about yourself. We'll make sure your password has
+        <strong style="color:#e0e0e0;">nothing</strong> to do with you —
+        because hackers research their targets first.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.25rem;">
+        <input id="sg-name"     type="text" placeholder="Your first name">
+        <input id="sg-birth"    type="text" placeholder="Your birth year (e.g. 1998)">
+        <input id="sg-hobby"    type="text" placeholder="A hobby or interest (e.g. football)">
+        <input id="sg-pet"      type="text" placeholder="A pet name or favourite thing">
+        <input id="sg-platform" type="text" placeholder="Platform this is for (e.g. Gmail)">
+      </div>
+      <button onclick="smartGenerate()" id="smart-btn" class="action-btn"
+        style="background:#1e3a5f;border:1px solid #3b82f6;color:#60a5fa;margin-top:0;">
+        🧠 Generate safe password
+      </button>
+      <div id="sg-warnings" style="display:none;margin-top:1rem;background:#2d1a00;
+        border:1px solid #92400e;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:12px;font-weight:600;color:#f97316;
+          letter-spacing:0.06em;margin-bottom:8px;">⚠️ OSINT WARNING</div>
+        <div id="sg-warning-list" style="font-size:13px;color:#fdba74;line-height:1.7;"></div>
+      </div>
+      <div id="sg-result" style="display:none;margin-top:1rem;background:#052e16;
+        border:1px solid #166534;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:12px;font-weight:600;color:#22c55e;
+          letter-spacing:0.06em;margin-bottom:8px;">YOUR SAFE PASSWORD</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <code id="sg-pw" style="font-size:15px;color:#4ade80;
+            font-family:'Courier New',monospace;word-break:break-all;"></code>
+          <button onclick="copySmart()" id="sg-copy-btn" style="flex-shrink:0;
+            padding:6px 14px;background:#14532d;border:1px solid #166534;
+            border-radius:8px;color:#4ade80;font-size:12px;cursor:pointer;">Copy</button>
+        </div>
+        <div style="font-size:12px;color:#6b7280;margin-top:8px;">
+          Zero connection to your personal details · 16 characters · All character types
+        </div>
+        <button id="sg-save-btn" style="display:none;margin-top:10px;width:100%;
+          padding:10px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:8px;
+          color:#60a5fa;font-size:13px;font-weight:600;cursor:pointer;"
+          onclick="saveFromSmart()">
+          💾 Save to Vault
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 3: VAULT -->
+    <div id="tab-vault-content" style="display:none;">
+
+      <!-- PIN LOCK SCREEN -->
+      <div id="vault-pin-screen">
+        <div style="text-align:center;margin-bottom:1.5rem;">
+          <div style="font-size:40px;margin-bottom:8px;">🔒</div>
+          <div style="font-size:15px;font-weight:600;color:#e0e0e0;margin-bottom:4px;"
+            id="pin-screen-title">Vault Locked</div>
+          <div style="font-size:13px;color:#6b7280;" id="pin-screen-sub">
+            Enter your 4-digit PIN to access your vault
+          </div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:16px;margin-bottom:1.5rem;">
+          <div class="pin-dot" id="pd0"></div>
+          <div class="pin-dot" id="pd1"></div>
+          <div class="pin-dot" id="pd2"></div>
+          <div class="pin-dot" id="pd3"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+          max-width:240px;margin:0 auto 1rem;">
+          <button class="pin-key" onclick="pinPress('1')">1</button>
+          <button class="pin-key" onclick="pinPress('2')">2</button>
+          <button class="pin-key" onclick="pinPress('3')">3</button>
+          <button class="pin-key" onclick="pinPress('4')">4</button>
+          <button class="pin-key" onclick="pinPress('5')">5</button>
+          <button class="pin-key" onclick="pinPress('6')">6</button>
+          <button class="pin-key" onclick="pinPress('7')">7</button>
+          <button class="pin-key" onclick="pinPress('8')">8</button>
+          <button class="pin-key" onclick="pinPress('9')">9</button>
+          <button class="pin-key" onclick="pinClear()"
+            style="font-size:11px;color:#6b7280;">Clear</button>
+          <button class="pin-key" onclick="pinPress('0')">0</button>
+          <button class="pin-key" onclick="pinDelete()"
+            style="font-size:18px;color:#6b7280;">⌫</button>
+        </div>
+        <div id="pin-msg" style="text-align:center;font-size:13px;
+          color:#ef4444;min-height:20px;margin-bottom:1rem;"></div>
+        <button onclick="submitPin()" id="pin-submit-btn" class="action-btn"
+          style="background:#1e3a5f;border:1px solid #3b82f6;color:#60a5fa;margin-top:0;">
+          🔓 Unlock Vault
+        </button>
+      </div>
+
+      <!-- VAULT OPEN -->
+      <div id="vault-open" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <div style="font-size:11px;font-weight:600;color:#3b82f6;letter-spacing:0.08em;">
+            🔐 YOUR ENCRYPTED VAULT
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span style="font-size:11px;color:#22c55e;">AES-256</span>
+            <button onclick="lockVaultPin()" style="font-size:12px;padding:5px 12px;
+              background:#1a1d27;border:1px solid #2a2d3e;border-radius:8px;
+              color:#6b7280;cursor:pointer;">🔒 Lock</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;">
+          <input id="v-platform" type="text"
+            placeholder="Platform (e.g. Gmail, TikTok, Instagram, WhatsApp)">
+          <input id="v-email" type="text" placeholder="Email or username">
+          <div style="position:relative;">
+            <input id="v-password" type="password" placeholder="Password"
+              style="padding-right:56px;">
+            <button onclick="toggleVaultPw()" style="position:absolute;right:12px;
+              top:50%;transform:translateY(-50%);background:none;border:none;
+              color:#6b7280;cursor:pointer;font-size:12px;">show</button>
+          </div>
+          <button onclick="saveToVault()" style="padding:12px;background:#1e3a5f;
+            border:1px solid #3b82f6;border-radius:10px;color:#60a5fa;
+            font-size:14px;font-weight:600;cursor:pointer;">💾 Save to vault</button>
+        </div>
+        <div id="vault-entries" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div style="margin-top:1.5rem;border-top:1px solid #2a2d3e;padding-top:1rem;">
+          <div style="font-size:11px;font-weight:600;color:#ef4444;
+            letter-spacing:0.08em;margin-bottom:8px;">DANGER ZONE</div>
+          <button onclick="confirmDeleteAccount()" style="width:100%;padding:10px;
+            background:none;border:1px solid #7f1d1d;border-radius:8px;
+            color:#f87171;font-size:13px;font-weight:600;cursor:pointer;">
+            🗑️ Delete my account and all data
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Built with Python + Flask · Cybersecurity Portfolio Project</div>
+</div>
+
+<script>
+  const API    = 'http://127.0.0.1:5000';
+  const CRACKS = ['—','Under 1 second','Minutes to hours','Days to months','Centuries'];
+  const COLORS = ['','#ef4444','#f97316','#3b82f6','#22c55e'];
+  const LABELS = ['','Weak','Fair','Good','Strong'];
+
+  let currentUser      = null;
+  let currentPassword  = null;
+  let vaultData        = [];
+  let vaultPinUnlocked = false;
+  let vaultHasPin      = false;
+  let pinBuffer        = '';
+  let pinMode          = 'unlock';
+
+  // ── AUTH ───────────────────────────────────────────────
+  function showAuth(tab) {
+    document.getElementById('auth-login').style.display    = tab==='login'    ? 'block':'none';
+    document.getElementById('auth-register').style.display = tab==='register' ? 'block':'none';
+    document.getElementById('auth-tab-login').classList.toggle('active',    tab==='login');
+    document.getElementById('auth-tab-register').classList.toggle('active', tab==='register');
+  }
+
+  function toggleAuthPw(id) {
+    const inp=document.getElementById(id);
+    inp.type=inp.type==='password'?'text':'password';
+  }
+
+  async function doRegister() {
+    const username=document.getElementById('reg-username').value.trim();
+    const password=document.getElementById('reg-password').value;
+    const confirm =document.getElementById('reg-confirm').value;
+    if(password!==confirm){ showMsg('reg-msg','Passwords do not match.','#ef4444'); return; }
+    try {
+      const res=await fetch(`${API}/api/register`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username,password})
+      });
+      const data=await res.json();
+      if(data.success){
+        showMsg('reg-msg','✓ '+data.message,'#22c55e');
+        setTimeout(()=>{ document.getElementById('login-username').value=username; showAuth('login'); },1500);
+      } else { showMsg('reg-msg',data.message,'#ef4444'); }
+    } catch { showMsg('reg-msg','Could not reach server. Make sure Flask is running.','#ef4444'); }
+  }
+
+  async function doLogin() {
+    const username=document.getElementById('login-username').value.trim();
+    const password=document.getElementById('login-password').value;
+    try {
+      const res=await fetch(`${API}/api/login`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username,password})
+      });
+      const data=await res.json();
+      if(data.success){
+        currentUser=data.username; currentPassword=password;
+        document.getElementById('display-username').textContent=currentUser;
+        document.getElementById('auth-screen').style.display='none';
+        document.getElementById('app-screen').style.display='block';
+        await loadVault();
+      } else { showMsg('login-msg',data.message,'#ef4444'); }
+    } catch { showMsg('login-msg','Could not reach server. Make sure Flask is running.','#ef4444'); }
+  }
+
+  function doLogout() {
+    currentUser=null; currentPassword=null; vaultData=[];
+    vaultPinUnlocked=false; pinBuffer='';
+    document.getElementById('auth-screen').style.display='block';
+    document.getElementById('app-screen').style.display='none';
+    document.getElementById('login-username').value='';
+    document.getElementById('login-password').value='';
+    document.getElementById('login-msg').style.display='none';
+    showAuth('login'); showTab('checker');
+  }
+
+  function showMsg(id,msg,color) {
+    const el=document.getElementById(id);
+    el.textContent=msg; el.style.color=color;
+    el.style.background=color==='#22c55e'?'#052e16':'#2d0a0a';
+    el.style.border=`1px solid ${color==='#22c55e'?'#166534':'#991b1b'}`;
+    el.style.display='block';
+  }
+
+  // ── TABS ───────────────────────────────────────────────
+  function showTab(tab) {
+    if(tab!=='vault'&&vaultPinUnlocked) lockVaultPin();
+    ['checker','smart','vault'].forEach(t=>{
+      document.getElementById('tab-'+t+'-content').style.display=t===tab?'block':'none';
+      document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+    });
+  }
+
+  // ── CHECKER ───────────────────────────────────────────
+  let debounceTimer;
+  function analyse() {
+    const pw=document.getElementById('pw').value;
+    clearTimeout(debounceTimer);
+    if(!pw){
+      resetBars();
+      document.getElementById('slabel').textContent='Enter a password';
+      document.getElementById('slabel').style.color='#6b7280';
+      document.getElementById('sscore').textContent='';
+      document.getElementById('crack').textContent='—';
+      document.getElementById('tips').innerHTML='<div style="color:#374151">Start typing to see your analysis...</div>';
+      ['len','upper','lower','num','sym','common'].forEach(k=>
+        document.getElementById('c-'+k).classList.remove('pass'));
+      return;
+    }
+    debounceTimer=setTimeout(async()=>{
+      try {
+        const res=await fetch(`${API}/api/check`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({password:pw})
+        });
+        updateCheckerUI(await res.json());
+      } catch { localAnalyse(pw); }
+    },300);
+  }
+
+  function updateCheckerUI(data) {
+    const{score,strength,checks,feedback}=data;
+    const level=score<=2?1:score<=3?2:score<=4?3:4;
+    for(let i=1;i<=4;i++)
+      document.getElementById('b'+i).style.background=i<=level?COLORS[level]:'#2a2d3e';
+    const sl=document.getElementById('slabel');
+    sl.textContent=strength; sl.style.color=COLORS[level];
+    document.getElementById('sscore').textContent=score+'/6 checks passed';
+    document.getElementById('crack').textContent=CRACKS[level];
+    Object.keys(checks).forEach(k=>{
+      const el=document.getElementById('c-'+k);
+      if(el) el.classList.toggle('pass',checks[k]);
+    });
+    document.getElementById('tips').innerHTML=feedback.length===0
+      ?'<div style="color:#22c55e;font-weight:600">✓ Excellent! All security checks passed.</div>'
+      :'<div class="tip-title">HOW TO IMPROVE</div>'+feedback.map(t=>`<div class="tip">· ${t}</div>`).join('');
+  }
+
+  const COMMON=["password","123456","qwerty","abc123","letmein","monkey",
+    "dragon","master","welcome","admin","password123","iloveyou"];
+  function localAnalyse(pw) {
+    const checks={
+      len:pw.length>=8,upper:/[A-Z]/.test(pw),lower:/[a-z]/.test(pw),
+      num:/[0-9]/.test(pw),sym:/[!@#$%^&*()_+\-=]/.test(pw),
+      common:!COMMON.includes(pw.toLowerCase())
+    };
+    const feedback=[];
+    if(!checks.len)    feedback.push('Use at least 8 characters');
+    if(!checks.upper)  feedback.push('Add an uppercase letter (A-Z)');
+    if(!checks.lower)  feedback.push('Add a lowercase letter (a-z)');
+    if(!checks.num)    feedback.push('Include a number (0-9)');
+    if(!checks.sym)    feedback.push('Add a symbol like !@#$%');
+    if(!checks.common) feedback.push('Avoid common passwords');
+    const score=Object.values(checks).filter(Boolean).length;
+    updateCheckerUI({score,strength:LABELS[score<=2?1:score<=3?2:score<=4?3:4],checks,feedback});
+  }
+
+  function resetBars() {
+    for(let i=1;i<=4;i++) document.getElementById('b'+i).style.background='#2a2d3e';
+  }
+
+  function toggleVis() {
+    const inp=document.getElementById('pw'),btn=document.getElementById('tog');
+    inp.type=inp.type==='password'?'text':'password';
+    btn.textContent=inp.type==='password'?'show':'hide';
+  }
+
+  // ── GENERATE ──────────────────────────────────────────
+  async function generatePassword() {
+    try {
+      const res=await fetch(`${API}/api/generate`,{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})
+      });
+      showGenResult((await res.json()).password);
+    } catch { showGenResult(localGenerate()); }
+  }
+
+  function localGenerate() {
+    const c='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=';
+    let pw=[];
+    'abcdefghijklmnopqrstuvwxyz'.split('').sort(()=>Math.random()-.5).slice(0,3).forEach(ch=>pw.push(ch));
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').sort(()=>Math.random()-.5).slice(0,3).forEach(ch=>pw.push(ch));
+    '0123456789'.split('').sort(()=>Math.random()-.5).slice(0,3).forEach(ch=>pw.push(ch));
+    '!@#$%^&*'.split('').sort(()=>Math.random()-.5).slice(0,3).forEach(ch=>pw.push(ch));
+    while(pw.length<16) pw.push(c[Math.floor(Math.random()*c.length)]);
+    return pw.sort(()=>Math.random()-.5).join('');
+  }
+
+  function showGenResult(pw) {
+    document.getElementById('gen-pw').textContent=pw;
+    document.getElementById('gen-result').style.display='block';
+    document.getElementById('copy-btn').textContent='Copy';
+    const input=document.getElementById('pw');
+    input.type='text'; input.value=pw;
+    document.getElementById('tog').textContent='hide';
+    analyse();
+  }
+
+  function copyPassword() {
+    navigator.clipboard.writeText(document.getElementById('gen-pw').textContent).then(()=>{
+      document.getElementById('copy-btn').textContent='Copied!';
+      setTimeout(()=>{ document.getElementById('copy-btn').textContent='Copy'; },2000);
+    });
+  }
+
+  // ── BREACH ────────────────────────────────────────────
+  async function checkBreach() {
+    const pw=document.getElementById('pw').value;
+    if(!pw){ alert('Please enter a password first.'); return; }
+    const btn=document.getElementById('breach-btn');
+    const box=document.getElementById('breach-result');
+    btn.innerHTML='<span class="spinner"></span>Checking...'; btn.disabled=true;
+    box.style.display='none';
+    try {
+      const res=await fetch(`${API}/api/breach`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({password:pw})
+      });
+      const data=await res.json();
+      if(data.breached===true){
+        box.style.cssText='display:block;margin-top:.75rem;border-radius:10px;padding:14px 16px;background:#2d0a0a;border:1px solid #991b1b;color:#fca5a5;';
+        box.innerHTML=`<div style="font-weight:700;font-size:15px;margin-bottom:6px;">⚠️ Found in ${data.count.toLocaleString()} data breaches!</div>
+          <div style="font-size:13px;line-height:1.6;color:#f87171;">This password is in hacker databases. <strong>Do not use it anywhere.</strong></div>`;
+      } else if(data.breached===false){
+        box.style.cssText='display:block;margin-top:.75rem;border-radius:10px;padding:14px 16px;background:#052e16;border:1px solid #166534;color:#86efac;';
+        box.innerHTML=`<div style="font-weight:700;font-size:15px;margin-bottom:6px;">✓ Not found in any known breaches</div>
+          <div style="font-size:13px;line-height:1.6;color:#4ade80;">Not in the HaveIBeenPwned database of 12+ billion leaked passwords.</div>`;
+      } else {
+        box.style.cssText='display:block;margin-top:.75rem;border-radius:10px;padding:14px 16px;background:#1a1d27;border:1px solid #2a2d3e;color:#6b7280;';
+        box.innerHTML='⚠️ '+data.message;
+      }
+    } catch {
+      box.style.cssText='display:block;margin-top:.75rem;border-radius:10px;padding:14px 16px;background:#1a1d27;border:1px solid #2a2d3e;color:#6b7280;';
+      box.innerHTML='⚠️ Could not reach server. Make sure Flask is running.';
+    }
+    btn.innerHTML='🔍 Check for known breaches'; btn.disabled=false;
+  }
+
+  // ── SMART GENERATOR ───────────────────────────────────
+  async function smartGenerate() {
+    const name=document.getElementById('sg-name').value.trim();
+    const birth=document.getElementById('sg-birth').value.trim();
+    const hobby=document.getElementById('sg-hobby').value.trim();
+    const pet=document.getElementById('sg-pet').value.trim();
+    const platform=document.getElementById('sg-platform').value.trim();
+    const btn=document.getElementById('smart-btn');
+    btn.innerHTML='<span class="spinner"></span>Generating...'; btn.disabled=true;
+    try {
+      const res=await fetch(`${API}/api/generate`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name,birth,hobby,pet})
+      });
+      const data=await res.json();
+      if(data.warnings&&data.warnings.length>0){
+        document.getElementById('sg-warning-list').innerHTML=
+          'A hacker who researches you would try these first:<br><br>'+
+          data.warnings.map(w=>`· ${w}`).join('<br>');
+        document.getElementById('sg-warnings').style.display='block';
+      }
+      document.getElementById('sg-pw').textContent=data.password;
+      document.getElementById('sg-result').style.display='block';
+      if(platform){
+        const sb=document.getElementById('sg-save-btn');
+        sb.style.display='block'; sb.dataset.platform=platform; sb.dataset.password=data.password;
+      }
+    } catch {
+      document.getElementById('sg-pw').textContent=localGenerate();
+      document.getElementById('sg-result').style.display='block';
+    }
+    btn.innerHTML='🧠 Generate safe password'; btn.disabled=false;
+  }
+
+  function copySmart() {
+    navigator.clipboard.writeText(document.getElementById('sg-pw').textContent).then(()=>{
+      document.getElementById('sg-copy-btn').textContent='Copied!';
+      setTimeout(()=>{ document.getElementById('sg-copy-btn').textContent='Copy'; },2000);
+    });
+  }
+
+  function saveFromSmart() {
+    const btn=document.getElementById('sg-save-btn');
+    document.getElementById('v-platform').value=btn.dataset.platform;
+    document.getElementById('v-password').value=btn.dataset.password;
+    showTab('vault');
+  }
+
+  // ── PIN KEYPAD ─────────────────────────────────────────
+  function updatePinDots() {
+    for(let i=0;i<4;i++){
+      const dot=document.getElementById('pd'+i);
+      dot.classList.toggle('filled',i<pinBuffer.length);
+      dot.classList.remove('error');
+    }
+  }
+
+  function pinPress(digit) {
+    if(pinBuffer.length>=4) return;
+    pinBuffer+=digit; updatePinDots();
+    document.getElementById('pin-msg').textContent='';
+    if(pinBuffer.length===4) setTimeout(submitPin,200);
+  }
+
+  function pinDelete() { pinBuffer=pinBuffer.slice(0,-1); updatePinDots(); }
+
+  function pinClear() {
+    pinBuffer=''; updatePinDots();
+    document.getElementById('pin-msg').textContent='';
+  }
+
+ async function submitPin() {
+    if(pinBuffer.length<4){ document.getElementById('pin-msg').textContent='Enter all 4 digits.'; return; }
+    if(pinMode==='set'){
+      try {
+        const res=await fetch(`${API}/api/vault/pin/set`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({username:currentUser,password:currentPassword,pin:pinBuffer})
+        });
+        const data=await res.json();
+        if(data.success){
+          vaultHasPin=true;
+          vaultPinUnlocked=true;
+          pinMode='unlock'; // ← switch to unlock mode immediately after setting
+          document.getElementById('pin-screen-title').textContent='Vault Locked';
+          document.getElementById('pin-screen-sub').textContent='Enter your 4-digit PIN to access your vault';
+          document.getElementById('pin-submit-btn').textContent='🔓 Unlock Vault';
+          openVault();
+        } else { showPinError(data.message); }
+      } catch { showPinError('Could not reach server.'); }
+    } else {
+      try {
+        const res=await fetch(`${API}/api/vault/pin/verify`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({username:currentUser,password:currentPassword,pin:pinBuffer})
+        });
+        const data=await res.json();
+        if(data.success){ vaultPinUnlocked=true; openVault(); }
+        else { showPinError('Incorrect PIN. Try again.'); }
+      } catch { showPinError('Could not reach server.'); }
+    }
+    pinBuffer=''; updatePinDots();
+  }
+
+  function showPinError(msg) {
+    document.getElementById('pin-msg').textContent=msg;
+    for(let i=0;i<4;i++){
+      const dot=document.getElementById('pd'+i);
+      dot.classList.add('error');
+      setTimeout(()=>dot.classList.remove('error'),600);
+    }
+    pinBuffer=''; updatePinDots();
+  }
+
+  function openVault() {
+    document.getElementById('vault-pin-screen').style.display='none';
+    document.getElementById('vault-open').style.display='block';
+    renderVault();
+  }
+
+ function lockVaultPin() {
+    vaultPinUnlocked=false; pinBuffer=''; updatePinDots();
+    pinMode='unlock'; // ← always unlock mode when locking
+    document.getElementById('pin-screen-title').textContent='Vault Locked';
+    document.getElementById('pin-screen-sub').textContent='Enter your 4-digit PIN to access your vault';
+    document.getElementById('pin-submit-btn').textContent='🔓 Unlock Vault';
+    document.getElementById('vault-pin-screen').style.display='block';
+    document.getElementById('vault-open').style.display='none';
+    document.getElementById('pin-msg').textContent='';
+  }
+
+  // ── VAULT ─────────────────────────────────────────────
+  async function loadVault() {
+    try {
+      const res=await fetch(`${API}/api/vault/load`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:currentUser,password:currentPassword})
+      });
+      const data=await res.json();
+      if(data.success){
+        vaultData=data.vault; vaultHasPin=data.has_pin;
+        if(!vaultHasPin){
+          pinMode='set';
+          document.getElementById('pin-screen-title').textContent='Set Your Vault PIN';
+          document.getElementById('pin-screen-sub').textContent='Choose a 4-digit PIN to protect your vault';
+          document.getElementById('pin-submit-btn').textContent='🔑 Set PIN & Open Vault';
+        } else {
+          pinMode='unlock';
+          document.getElementById('pin-screen-title').textContent='Vault Locked';
+          document.getElementById('pin-screen-sub').textContent='Enter your 4-digit PIN to access your vault';
+          document.getElementById('pin-submit-btn').textContent='🔓 Unlock Vault';
+        }
+      }
+    } catch { vaultData=[]; }
+  }
+
+  async function saveVaultToServer() {
+    await fetch(`${API}/api/vault/save`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:currentUser,password:currentPassword,vault:vaultData})
+    });
+  }
+
+  async function saveToVault() {
+    const platform=document.getElementById('v-platform').value.trim();
+    const email=document.getElementById('v-email').value.trim();
+    const password=document.getElementById('v-password').value.trim();
+    if(!platform||!password){ alert('Please fill in at least platform and password.'); return; }
+    vaultData.push({platform,email,password,saved:new Date().toLocaleDateString()});
+    await saveVaultToServer();
+    document.getElementById('v-platform').value='';
+    document.getElementById('v-email').value='';
+    document.getElementById('v-password').value='';
+    renderVault();
+  }
+
+  async function deleteEntry(i) {
+    if(confirm(`Delete ${vaultData[i].platform} entry?`)){
+      vaultData.splice(i,1);
+      await saveVaultToServer();
+      renderVault();
+    }
+  }
+
+  async function confirmDeleteAccount() {
+    if(!confirm('This will permanently delete your account and ALL saved passwords.')) return;
+    try {
+      const res=await fetch(`${API}/api/delete-account`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:currentUser,password:currentPassword})
+      });
+      const data=await res.json();
+      if(data.success){ alert('Account deleted.'); doLogout(); }
+      else { alert(data.message); }
+    } catch { alert('Could not reach server.'); }
+  }
+
+  function renderVault() {
+    const c=document.getElementById('vault-entries');
+    if(!vaultData.length){
+      c.innerHTML='<div style="font-size:13px;color:#374151;text-align:center;padding:1rem;">No saved passwords yet.</div>';
+      return;
+    }
+    c.innerHTML=vaultData.map((e,i)=>`
+      <div style="background:#0f1117;border:1px solid #2a2d3e;border-radius:10px;padding:12px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:14px;font-weight:600;color:#e0e0e0;">${e.platform}</span>
+          <button onclick="deleteEntry(${i})" style="font-size:11px;padding:3px 10px;
+            background:none;border:1px solid #7f1d1d;border-radius:6px;
+            color:#f87171;cursor:pointer;">Delete</button>
+        </div>
+        ${e.email?`<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">${e.email}</div>`:''}
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <code style="font-size:13px;color:#4ade80;font-family:'Courier New',monospace;
+            word-break:break-all;" id="vpw-${i}">••••••••••••</code>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button onclick="toggleEntry(${i})" id="vtog-${i}" style="font-size:11px;
+              padding:4px 10px;background:#1a1d27;border:1px solid #2a2d3e;
+              border-radius:6px;color:#6b7280;cursor:pointer;">Show</button>
+            <button onclick="copyEntry(${i})" id="vcpy-${i}" style="font-size:11px;
+              padding:4px 10px;background:#1e3a5f;border:1px solid #3b82f6;
+              border-radius:6px;color:#60a5fa;cursor:pointer;">Copy</button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#374151;margin-top:6px;">Saved ${e.saved}</div>
+      </div>`).join('');
+  }
+
+  function toggleEntry(i) {
+    const el=document.getElementById('vpw-'+i),btn=document.getElementById('vtog-'+i);
+    if(el.textContent==='••••••••••••'){ el.textContent=vaultData[i].password; btn.textContent='Hide'; }
+    else { el.textContent='••••••••••••'; btn.textContent='Show'; }
+  }
+
+  function copyEntry(i) {
+    navigator.clipboard.writeText(vaultData[i].password).then(()=>{
+      const btn=document.getElementById('vcpy-'+i);
+      btn.textContent='Copied!';
+      setTimeout(()=>{ btn.textContent='Copy'; },2000);
+    });
+  }
+
+  function toggleVaultPw() {
+    const inp=document.getElementById('v-password');
+    inp.type=inp.type==='password'?'text':'password';
+  }
+</script>
+</body>
+</html>
