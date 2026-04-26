@@ -57,3 +57,5 @@ This project is built for educational and portfolio purposes. For production use
 
 ---
 Built as a cybersecurity learning project 🛡️
+## 🌐 Live Demo
+👉 [Try it live](https://password-security-toolkit.onrender.com)
