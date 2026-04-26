@@ -3,5 +3,10 @@
     "password_hash": "99601eb34c86d86495a1ee341725674775285a4d7faedc68c826ed00adf1e501",
     "vault_encrypted": "gAAAAABp7Y8N7E7P9YpXe1y1WkT9l3CU4CmLjCZjjLrPSTFEyyrGk2E3Ke-1nTkRS7lHzKH6OrCJa0z5BizexL2Wb-R17q0Arpa-6yklS46UfAilPCaRmJQQxZpZEWd8m7M1GwHuIyXhlqlw45xLF8J1-CA-IgExmOODyDjHkNL0T7CG5I-t4hpny9w7Bx-tujfrfqeMyl4F",
     "vault_pin": "90dbca35cc682d5b4c2e53bd171e6cfba19168539c6f0799df31613fd5638a0f"
+  },
+  "stacy kamene": {
+    "password_hash": "b9e12c0f6dceb484e0498ec2418ab14c9855c7a57d122e8617fbbdc132e3fc5f",
+    "vault_encrypted": "gAAAAABp7Z6B197HsIsqLnSZkqx_k-uRZOVi6M3OaKiAySuWAcV5TJArni61tUcp3nQcPKmNdugjRB6jjLpOnE8CPuvGnYyYeQuBxyRlu6ysKrSOJYuOMdKukFs2d2yFBuxkI8ZYfXjyLE1xz3GA4pRlq8EtbluM0BN_316uMmzbOYKa4VdGNUgyOpkOhAhSoPu0AXMYysaI",
+    "vault_pin": "ed946f65d2c785d90e827c5ffd879ce3b49c68d4c88013074176a7e73bc58bcf"
   }
 }
